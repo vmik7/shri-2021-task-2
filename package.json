@@ -1,0 +1,19 @@
+{
+  "name": "shri-2021-task-2",
+  "version": "1.0.0",
+  "description": "Second task to IDC2021 from Yandex",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vmik7/shri-2021-task-2.git"
+  },
+  "author": "vmik7 <vmik7@yandex.ru>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vmik7/shri-2021-task-2/issues"
+  },
+  "homepage": "https://github.com/vmik7/shri-2021-task-2#readme"
+}
