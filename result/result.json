@@ -441,5 +441,15 @@
         }
       ]
     }
+  },
+  {
+    "alias": "diagram",
+    "data": {
+      "title": "Размер коммитов",
+      "subtitle": "Последний вагон",
+      "totalText": "",
+      "differenceText": "",
+      "categories": []
+    }
   }
 ]

@@ -276,6 +276,31 @@ function prepareData(entities, { sprintId }) {
 
 
 
+
+    // * Реализация слайда 'diagram'
+
+
+
+    // Добавляем слайд
+    slides.push({
+        alias: 'diagram',
+        data: {
+            title: 'Размер коммитов',
+            subtitle: currentSprint.name,
+            totalText: '',
+            differenceText: '',
+            categories: [
+                // {"title": "> 1001 строки", "valueText": "2 коммита", "differenceText": "-3 коммита"},
+                // {"title": "501 — 1000 строк", "valueText": "3 коммита", "differenceText": "-3 коммита"},
+                // {"title": "101 — 500 строк", "valueText": "13 коммитов", "differenceText": "-22 коммита"},
+                // {"title": "1 — 100 строк", "valueText": "86 коммитов", "differenceText": "-78 коммитов"}
+            ]
+        }
+    });
+
+
+
+
     return slides;
 }
 
