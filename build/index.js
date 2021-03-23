@@ -83,15 +83,15 @@ function prepareData(entities, { sprintId }) {
     // console.log('Всего Sprints: ' + allSprints.length + '. Изначально: ' + entities.filter(item => item.type === 'Sprint').length);
     // console.log('objectInArrayCnt: ' + objectInArrayCnt + '. Элементов в массиве: ' + entities.length);
 
-    // Ищем текущий спринт в массиве
-    let currentSprint = allSprints.find(item => item.id === sprintId);
-
 
 
 
 
     // * Реализация слайда 'vote'
 
+
+    // Ищем текущий спринт в массиве
+    let currentSprint = allSprints.find(item => item.id === sprintId);
 
     // Считаем лайки
     let voteLikesCnt = [];
@@ -296,6 +296,80 @@ function prepareData(entities, { sprintId }) {
     // * Реализация слайда 'diagram'
 
 
+    // Ищем предыдущий спринт
+    let prevSprint = allSprints.find(item => item.id === sprintId - 1);
+    
+    // Коммиты за текущий и предыдущий спринты: [0] > 1001 строки, [1] 501 — 1000 строк, [2] 101 — 500 строк, [3] 1 — 100 строк
+    let diagramCurrectCommits = [ 0, 0, 0, 0 ], diagramPrevCommits = [ 0, 0, 0, 0 ];
+
+    // Функция, которая по количеству строк кода возвращает номер категории, к которой нуджно отнести коммит
+    let getCommitCategory = (value) => {
+        if (value <= 100) {
+            return 3;
+        }
+        else if (value <= 500) {
+            return 2;
+        }
+        else if (value <= 1000) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    // Перебираем все коммиты
+    allCommits.forEach(commit => {
+
+        // Сразу отсеиваем коммиты, не относящиеся к текущему или предыдущему спринту
+        if (prevSprint && commit.timestamp < prevSprint.startAt || !prevSprint && commit.timestamp < currentSprint.startAt || commit.timestamp >= currentSprint.finishAt) {
+            return;
+        }
+
+        // Считаем общее количество строк в коммите
+        let commitTotalStrings = 0;
+        commit.summaries.forEach(item => {
+            let summary = (typeof item === 'object' ? item : allSummaries.find(cur => cur.id === item));
+            commitTotalStrings += summary.added + summary.removed;
+        });
+
+        // Решаем, в какой спринт добавить коммит
+        if (prevSprint && prevSprint.startAt <= commit.timestamp && commit.timestamp < prevSprint.finishAt) {
+            diagramPrevCommits[getCommitCategory(commitTotalStrings)]++;
+        }
+        else if (currentSprint.startAt <= commit.timestamp && commit.timestamp < currentSprint.finishAt) {
+            diagramCurrectCommits[getCommitCategory(commitTotalStrings)]++;
+        }
+    });
+
+    // Считаем разницу
+    let diagramDifferences = diagramCurrectCommits.map((item, index) => {
+        return item - diagramPrevCommits[index];
+    });
+
+    // Считаем сумму коммитов по спринтам
+    let diagramCurrentValue = diagramCurrectCommits.reduce((sum, item) => sum += item, 0);
+    let diagramPrevValue = diagramPrevCommits.reduce((sum, item) => sum += item, 0);
+    let diagramTotalDifference = diagramCurrentValue - diagramPrevValue;
+
+    // Функция, добавляющая суффикс 'коммит{_|а|ов}'
+    let getDiagramSuffix = (num) => {
+        if (num < 0) {
+            num = -num;
+        }
+        if (11 <= num % 100 && num % 100 <= 14) {
+            return ' коммитов';
+        }
+        else if (num % 10 === 1) {
+            return ' коммит';
+        }
+        else if (2 <= num % 10 && num % 10 <= 4) {
+            return ' коммита';
+        }
+        else {
+            return ' коммитов';
+        }
+    }
 
     // Добавляем слайд
     slides.push({
@@ -303,13 +377,29 @@ function prepareData(entities, { sprintId }) {
         data: {
             title: 'Размер коммитов',
             subtitle: currentSprint.name,
-            totalText: '',
-            differenceText: '',
+            totalText: diagramCurrentValue + getDiagramSuffix(diagramCurrentValue),
+            differenceText: (diagramTotalDifference >= 0 ? '+' : '') + diagramTotalDifference + ' с прошлого спринта',
             categories: [
-                // {"title": "> 1001 строки", "valueText": "2 коммита", "differenceText": "-3 коммита"},
-                // {"title": "501 — 1000 строк", "valueText": "3 коммита", "differenceText": "-3 коммита"},
-                // {"title": "101 — 500 строк", "valueText": "13 коммитов", "differenceText": "-22 коммита"},
-                // {"title": "1 — 100 строк", "valueText": "86 коммитов", "differenceText": "-78 коммитов"}
+                { 
+                    title : '> 1001 строки',
+                    valueText: diagramCurrectCommits[0] + getDiagramSuffix(diagramCurrectCommits[0]),
+                    differenceText: (diagramDifferences[0] >= 0 ? '+' : '') + diagramDifferences[0] + getDiagramSuffix(diagramDifferences[0])
+                },
+                { 
+                    title : '501 — 1000 строк',
+                    valueText: diagramCurrectCommits[1] + getDiagramSuffix(diagramCurrectCommits[1]),
+                    differenceText: (diagramDifferences[1] >= 0 ? '+' : '') + diagramDifferences[1] + getDiagramSuffix(diagramDifferences[1])
+                },
+                { 
+                    title : '101 — 500 строк',
+                    valueText: diagramCurrectCommits[2] + getDiagramSuffix(diagramCurrectCommits[2]),
+                    differenceText: (diagramDifferences[2] >= 0 ? '+' : '') + diagramDifferences[2] + getDiagramSuffix(diagramDifferences[2])
+                },
+                { 
+                    title : '1 — 100 строк',
+                    valueText: diagramCurrectCommits[3] + getDiagramSuffix(diagramCurrectCommits[3]),
+                    differenceText: (diagramDifferences[3] >= 0 ? '+' : '') + diagramDifferences[3] + getDiagramSuffix(diagramDifferences[3])
+                }
             ]
         }
     });
