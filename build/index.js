@@ -121,6 +121,22 @@ function prepareData(entities, { sprintId }) {
     }
     voteLikes.sort((a, b) => b.likes - a.likes);
 
+    // Функция добавляет суффикс ' голос{_|а|ов}'
+    let getVoteSuffix = (num) => {
+        if (11 <= num % 100 && num % 100 <= 14) {
+            return ' голосов';
+        }
+        else if (num % 10 === 1) {
+            return ' голос';
+        }
+        else if (2 <= num % 10 && num % 10 <= 4) {
+            return ' голоса';
+        }
+        else {
+            return ' голосов';
+        }
+    }
+
     // Формируем массив пользователей
     let voteUsers = [];
     voteLikes.forEach((item) => {
@@ -133,7 +149,7 @@ function prepareData(entities, { sprintId }) {
             id: user.id,
             name: user.name,
             avatar: user.avatar,
-            valueText: item.likes + ' голосов'
+            valueText: item.likes + getVoteSuffix(item.likes)
         });
     });
     
