@@ -407,6 +407,60 @@ function prepareData(entities, { sprintId }) {
 
 
 
+
+    // * Реализация слайда 'activity'
+
+    // Количество миллисекунд в часе
+    const MsPerHour = 60 * 60 * 1000;
+
+    // Название дней недели
+    let dayNames = [ 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun' ];
+
+    // Данные для тепловой карты
+    let activityData = {};
+    for (let day = 0; day < 7; day++) {
+        activityData[dayNames[day]] = [];
+        for (let hour = 0; hour < 23; hour++) {
+            activityData[dayNames[day]][hour] = 0;
+        }
+    }
+
+    // let sprintDate = new Date(currentSprint.startAt);
+    // console.log(sprintDate.getDay(), sprintDate.getHours(), sprintDate.getMinutes(), sprintDate.getSeconds(), sprintDate.getMilliseconds());
+
+    // Считаем коммиты
+    allCommits.forEach(commit => {
+
+        // Отсеиваем коммиты, не относящиеся к текущему спринту
+        if (commit.timestamp < currentSprint.startAt || currentSprint.finishAt <= commit.timestamp) {
+            return;
+        }
+
+        // Вычисляем день и час
+        let pos = Math.floor((commit.timestamp - currentSprint.startAt) / MsPerHour);
+        let day = Math.floor(pos / 24);
+        let hour = pos % 24;
+
+        // Инкремент в массиве
+        activityData[dayNames[day]][hour]++;
+
+        // let date = new Date(commit.timestamp);
+        // activityData[dayNames[date.getDay()]][date.getHours()]++;
+    });
+
+
+    // Добавляем слайд
+    slides.push({
+        alias: 'activity',
+        data: {
+            title: 'Коммиты',
+            subtitle: currentSprint.name,
+            data: activityData
+        }
+    });
+
+
+
     return slides;
 }
 
