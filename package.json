@@ -4,7 +4,9 @@
   "description": "Second task to IDC2021 from Yandex",
   "main": "index.js",
   "scripts": {
-    "start": "node index"
+    "start": "node index",
+    "test": "node tests",
+    "dev": "node index; node tests"
   },
   "repository": {
     "type": "git",
