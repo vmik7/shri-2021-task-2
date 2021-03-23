@@ -98,7 +98,7 @@ function prepareData(entities, { sprintId }) {
     allComments.forEach(comment => {
 
         // Оставляем только комменты в текущем спринте
-        if (comment.createdAt < currentSprint.startAt || comment.createdAt > currentSprint.finishAt) {
+        if (comment.createdAt < currentSprint.startAt || comment.createdAt >= currentSprint.finishAt) {
             return;
         }
 
@@ -160,7 +160,7 @@ function prepareData(entities, { sprintId }) {
     allCommits.forEach(commit => {
 
         // Оставляем только комменты в текущем спринте
-        if (commit.timestamp < currentSprint.startAt || commit.timestamp > currentSprint.finishAt) {
+        if (commit.timestamp < currentSprint.startAt || commit.timestamp >= currentSprint.finishAt) {
             return;
         }
 
@@ -211,6 +211,67 @@ function prepareData(entities, { sprintId }) {
     });
 
 
+
+
+
+    // * Реализация слайда 'chart'
+
+
+    // Вспомогательный массив, элементы вида: { id, начало, конец, коммиты }
+    let chartSprintsData = [];
+
+    // Проходимся по всем коммитами и добавляем данные в массив
+    allSprints.forEach(sprint => {
+        chartSprintsData.push({
+            id: sprint.id,
+            begin: sprint.startAt,
+            end: sprint.finishAt,
+            commits: 0,
+            name: sprint.name
+        });
+    });
+
+    // Сортировка по id
+    chartSprintsData.sort((a, b) => a.id - b.id);
+
+    // Подсчет коммитов
+    allCommits.forEach(commit => {
+        chartSprintsData.some((item, index, array) => {
+            if (item.begin <= commit.timestamp && commit.timestamp < item.end) {
+                array[index].commits++;
+                return true;
+            }
+            return false;
+        });
+    });
+
+    // Данные для графика
+    let chartValues = [];
+    chartSprintsData.forEach(item => {
+        let obj = {
+            title: String(item.id),
+            hint: item.name,
+            value: item.commits,
+        }
+        if (item.id === currentSprint.id) {
+            obj.active = true;
+        }
+        chartValues.push(obj);
+    });
+
+    // Упорядоченный массив лидеров по количеству коммитов за текущий спринт можем взять из слайда leaders
+    let chartUsers = leadersUsers;
+
+    // Добавляем слайд
+    slides.push({
+        alias: 'chart',
+        data: {
+            title: 'Коммиты',
+            subtitle: currentSprint.name,
+            values: chartValues,
+            users: chartUsers
+        }
+    });
 
 
 
