@@ -414,19 +414,16 @@ function prepareData(entities, { sprintId }) {
     const MsPerHour = 60 * 60 * 1000;
 
     // Название дней недели
-    let dayNames = [ 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun' ];
+    let dayNames = [ 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat' ];
 
     // Данные для тепловой карты
     let activityData = {};
     for (let day = 0; day < 7; day++) {
         activityData[dayNames[day]] = [];
-        for (let hour = 0; hour < 23; hour++) {
+        for (let hour = 0; hour < 24; hour++) {
             activityData[dayNames[day]][hour] = 0;
         }
     }
-
-    // let sprintDate = new Date(currentSprint.startAt);
-    // console.log(sprintDate.getDay(), sprintDate.getHours(), sprintDate.getMinutes(), sprintDate.getSeconds(), sprintDate.getMilliseconds());
 
     // Считаем коммиты
     allCommits.forEach(commit => {
@@ -436,16 +433,9 @@ function prepareData(entities, { sprintId }) {
             return;
         }
 
-        // Вычисляем день и час
-        let pos = Math.floor((commit.timestamp - currentSprint.startAt) / MsPerHour);
-        let day = Math.floor(pos / 24);
-        let hour = pos % 24;
-
-        // Инкремент в массиве
-        activityData[dayNames[day]][hour]++;
-
-        // let date = new Date(commit.timestamp);
-        // activityData[dayNames[date.getDay()]][date.getHours()]++;
+        // Создаем объект Date и делаем инкремент
+        let date = new Date(commit.timestamp);
+        activityData[dayNames[date.getDay()]][date.getHours()]++;
     });
 
 
