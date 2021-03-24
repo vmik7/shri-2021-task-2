@@ -105,39 +105,61 @@ let activityHandler = (correctObject, myObject) => {
 }
 
 // Сравниваем шаблон leaders
+
 console.log('\n\x1b[37mLeaders: \x1b[0m');
 let correctLeaders = correctData.find(item => item.alias === 'leaders');
 let myLeaders = myData.find(item => item.alias === 'leaders');
+
+console.log(JSON.stringify(correctLeaders) === JSON.stringify(myLeaders) ? 'strings equal!' : 'strings not equal...');
+
 let leadersOK = validateSlide(myLeaders) && compareSlides(correctLeaders, myLeaders, [ { key: 'users', handler: arrayHandler } ]);
 console.log(leadersOK ? '\x1b[32mOK\x1b[0m' : '\x1b[31mFAIL\x1b[0m');
 
 // Сравниваем шаблон vote
+
 console.log('\n\x1b[37mVote: \x1b[0m');
 let correctVote = correctData.find(item => item.alias === 'vote');
 let myVote = myData.find(item => item.alias === 'vote');
+
+console.log(JSON.stringify(correctVote) === JSON.stringify(myVote) ? 'strings equal!' : 'strings not equal...');
+
 let voteOK = validateSlide(myVote) && compareSlides(correctVote, myVote, [ { key: 'users', handler: arrayHandler } ]);
 console.log(voteOK ? '\x1b[32mOK\x1b[0m' : '\x1b[31mFAIL\x1b[0m');
 
 // Сравниваем шаблон chart
+
 console.log('\n\x1b[37mChart: \x1b[0m');
 let correctChart = correctData.find(item => item.alias === 'chart');
 let myChart = myData.find(item => item.alias === 'chart');
+
+console.log(JSON.stringify(correctChart) === JSON.stringify(myChart)? 'strings equal!' : 'strings not equal...');
+
 let chartOK = validateSlide(myChart) && compareSlides(correctChart, myChart, [ { key: 'values', handler: arrayHandler }, { key: 'users', handler: arrayHandler } ]);
 console.log(chartOK ? '\x1b[32mOK\x1b[0m' : '\x1b[31mFAIL\x1b[0m');
 
 // Сравниваем шаблон diagram
+
 console.log('\n\x1b[37mDiagram: \x1b[0m');
 let correctDiagram = correctData.find(item => item.alias === 'diagram');
 let myDiagram = myData.find(item => item.alias === 'diagram');
+
+console.log(JSON.stringify(correctDiagram) === JSON.stringify(myDiagram) ? 'strings equal!' : 'strings not equal...');
+
 let diagramOK = validateSlide(myDiagram) && compareSlides(correctDiagram, myDiagram, [ { key: 'categories', handler: arrayHandler } ]);
 console.log(diagramOK ? '\x1b[32mOK\x1b[0m' : '\x1b[31mFAIL\x1b[0m');
 
 // Сравниваем шаблон activity
+
 console.log('\n\x1b[37mActivity: \x1b[0m');
 let correctActivity = correctData.find(item => item.alias === 'activity');
 let myActivity = myData.find(item => item.alias === 'activity');
+
+console.log(JSON.stringify(correctActivity) === JSON.stringify(myActivity) ? 'strings equal!' : 'strings not equal...');
+
 let activityOK = validateSlide(myActivity) && compareSlides(correctActivity, myActivity, [ { key: 'data', handler: activityHandler } ]);
 console.log(activityOK ? '\x1b[32mOK\x1b[0m' : '\x1b[31mFAIL\x1b[0m');
+
+// Итоги по всем тестам
 
 if (leadersOK && voteOK && chartOK && diagramOK && activityOK) {
     console.log('\n\x1b[30m\x1b[42m Tests passed! \x1b[0m\n');
