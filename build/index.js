@@ -119,7 +119,13 @@ function prepareData(entities, { sprintId }) {
     for (userId in voteLikesCnt) {
         voteLikes.push({ id: +userId, likes: voteLikesCnt[userId] });
     }
-    voteLikes.sort((a, b) => b.likes - a.likes);
+    voteLikes.sort((a, b) => {
+        if (a.likes > b.likes) return -1;
+        else if (a.likes < b.likes) return 1;
+        else if (a.id < b.id) return -1;
+        else if (a.id > b.id) return 1;
+        return 0;
+    });
 
     // Функция добавляет суффикс ' голос{_|а|ов}'
     let getVoteSuffix = (num) => {
