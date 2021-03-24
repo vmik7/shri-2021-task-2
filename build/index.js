@@ -93,8 +93,13 @@ function prepareData(entities, { sprintId }) {
     // Ищем текущий спринт в массиве
     let currentSprint = allSprints.find(item => item.id === sprintId);
 
-    // Считаем лайки
+    // Массив, где индекс - id пользователя
     let voteLikesCnt = [];
+    allUsers.forEach(user => {
+        voteLikesCnt[user.id] = 0;
+    });
+
+    // Перебираем комментарии
     allComments.forEach(comment => {
 
         // Оставляем только комменты в текущем спринте
@@ -104,11 +109,6 @@ function prepareData(entities, { sprintId }) {
 
         // Находим id автора
         let userId = (typeof comment.author === 'number' ? comment.author : comment.author.id);
-
-        // Защита от undefined
-        if (!voteLikesCnt[userId]) {
-            voteLikesCnt[userId] = 0;
-        }
 
         // Прибавляем лайки
         voteLikesCnt[userId] += comment.likes.length;
