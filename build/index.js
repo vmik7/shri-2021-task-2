@@ -203,7 +203,13 @@ function prepareData(entities, { sprintId }) {
     for (userId in leadersCommitsCnt) {
         leadersCommits.push({ id: +userId, commits: leadersCommitsCnt[userId] });
     }
-    leadersCommits.sort((a, b) => b.commits - a.commits);
+    leadersCommits.sort((a, b) => {
+        if (a.commits > b.commits) return -1;
+        else if (a.commits < b.commits) return 1;
+        else if (a.id < b.id) return -1;
+        else if (a.id > b.id) return 1;
+        return 0;
+    });
 
     // Формируем массив пользователей
     let leadersUsers = [];
