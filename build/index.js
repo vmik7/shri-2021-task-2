@@ -390,27 +390,27 @@ function prepareData(entities, { sprintId }) {
             title: 'Размер коммитов',
             subtitle: currentSprint.name,
             totalText: diagramCurrentValue + getDiagramSuffix(diagramCurrentValue),
-            differenceText: (diagramTotalDifference >= 0 ? '+' : '') + diagramTotalDifference + ' с прошлого спринта',
+            differenceText: (diagramTotalDifference > 0 ? '+' : '') + diagramTotalDifference + ' с прошлого спринта',
             categories: [
                 { 
                     title : '> 1001 строки',
                     valueText: diagramCurrectCommits[0] + getDiagramSuffix(diagramCurrectCommits[0]),
-                    differenceText: (diagramDifferences[0] >= 0 ? '+' : '') + diagramDifferences[0] + getDiagramSuffix(diagramDifferences[0])
+                    differenceText: (diagramDifferences[0] > 0 ? '+' : '') + diagramDifferences[0] + getDiagramSuffix(diagramDifferences[0])
                 },
                 { 
                     title : '501 — 1000 строк',
                     valueText: diagramCurrectCommits[1] + getDiagramSuffix(diagramCurrectCommits[1]),
-                    differenceText: (diagramDifferences[1] >= 0 ? '+' : '') + diagramDifferences[1] + getDiagramSuffix(diagramDifferences[1])
+                    differenceText: (diagramDifferences[1] > 0 ? '+' : '') + diagramDifferences[1] + getDiagramSuffix(diagramDifferences[1])
                 },
                 { 
                     title : '101 — 500 строк',
                     valueText: diagramCurrectCommits[2] + getDiagramSuffix(diagramCurrectCommits[2]),
-                    differenceText: (diagramDifferences[2] >= 0 ? '+' : '') + diagramDifferences[2] + getDiagramSuffix(diagramDifferences[2])
+                    differenceText: (diagramDifferences[2] > 0 ? '+' : '') + diagramDifferences[2] + getDiagramSuffix(diagramDifferences[2])
                 },
                 { 
                     title : '1 — 100 строк',
                     valueText: diagramCurrectCommits[3] + getDiagramSuffix(diagramCurrectCommits[3]),
-                    differenceText: (diagramDifferences[3] >= 0 ? '+' : '') + diagramDifferences[3] + getDiagramSuffix(diagramDifferences[3])
+                    differenceText: (diagramDifferences[3] > 0 ? '+' : '') + diagramDifferences[3] + getDiagramSuffix(diagramDifferences[3])
                 }
             ]
         }
