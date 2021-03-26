@@ -15,8 +15,5 @@ fs.readFile(path.resolve('examples', 'input.json'), 'utf-8', (err, content) => {
         if (err) {
             throw err;
         }
-
-        // ! Debug
-        // console.log('file \'result.json\' written successfully')
     })
 })
