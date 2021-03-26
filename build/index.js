@@ -5,90 +5,126 @@ function prepareData(entities, { sprintId }) {
 
 
 
+    // ** Разбиваем все данные на сущности *
 
+    // * Не используются
+    let allProjects = [];
+    let allIssues = [];
 
-    // *** Разбиваем все данные на сущности
+    // * Обычные массивы, по ним будем ходить с помощью forEach
+    let allComments = [];
+    let allCommits = [];
 
+    // * Массив для спринтов будет отсортирован, по нему можно ходить бинпоиском за логарифмическое время
+    let allSprints = [];
 
-    // Массивы содержат все сущности своего типа
-    let allProjects = [], allUsers = [], allIssues = [], allComments = [], allCommits = [], allSummaries = [], allSprints = [];
+    // * Ассоциативные массивы по ключу = id - создаём 'чистые' объекты по прототипу null
+    let allUsers = Object.create(null);
+    let allSummaries = Object.create(null);
 
-    // ! allProjects - не используется
-    // ? allUsers - необходим 
-    // ! allIssues - не используется
-    // ? allComments - необходим 
-    // ? allCommits - необходим 
-    // ? allSummaries - необходимо для поиска нужных Summary по id
-    // ? allSprints - необходим
+    // Стэк для обхода в ширину (стек будет работаеть быстрее очереди, а порядок в нашем случае не важен)
+    let entityStack = [];
 
-    // Функция обхода в глубину
-    // TODO: переписать на обход в ширину
-    let go = (obj) => {
+    // Добавляем исходные сущности в стек
+    entities.forEach(entity => entityStack.push(entity));
 
-        // Отсекаем случаи, когда obj не является объектом или он равен null
-        if (typeof obj !== 'object' || obj === null) {
-            return;
-        }
+    // Обход в ширину
+    while (entityStack.length > 0) {
 
-        // Если объект представляет собой массив, то запускаемся от всех объектов внутри него
-        if (Array.isArray(obj)) {
-            for (item of obj) {
-                if (typeof item === 'object') {
-                    go(item);
-                }
-            }
-            return;
-        }
+        // Достаем элемент из стека
+        let entity = entityStack.pop();
 
-        // Помещаем объект в соответствующий его типу массив
-        switch (obj.type) {
-            // case 'Project':
-            //     allProjects.push(obj);
-            //     break;
-            case 'User':
-                allUsers.push(obj);
+        // Кладём в нужную коробочку
+        switch (entity.type) {
+            case 'Project':
+                allProjects.push(entity);
                 break;
-            // case 'Issue':
-            //     allIssues.push(obj);
-            //     break;
+            case 'Issue':
+                allIssues.push(entity);
+                break;
             case 'Comment':
-                allComments.push(obj);
+                allComments.push(entity);
                 break;
             case 'Commit':
-                allCommits.push(obj);
-                break;
-            case 'Summary':
-                allSummaries.push(obj);
+                allCommits.push(entity);
                 break;
             case 'Sprint':
-                allSprints.push(obj);
+                allSprints.push(entity);
+                break;
+            case 'User':
+                allUsers[entity.id] = entity;
+                break;
+            case 'Summary':
+                allSummaries[entity.id] = entity;
                 break;
         }
 
-        // Проходимся по всем полям объекта, и если какое-то из них тоже объект, запускаемся и от него
-        for (key in obj) {
-            if (typeof obj[key] === 'object') {
-                go(obj[key]);
+        // Смотрим все ключи
+        for (key in entity) {
+
+            // Если видим массив - ищем в нём объекты, у которых есть поле type
+            if (Array.isArray(entity[key])) {
+                entity[key].forEach(item => {
+                    if (typeof item === 'object' && item.type) {
+                        entityStack.push(item);
+                    }
+                })
+            }
+
+            // Если видим объект, у которого есть поле type - добавляем в стек
+            else if (typeof entity[key] === 'object' && entity[key] !== null && entity[key].type) {
+                entityStack.push(entity[key]);
             }
         }
     }
 
-    // Запускаем обход по всему массиву данных
-    go(entities);
+    // Сортируем allSprints по id
+    allSprints.sort((x, y) => x.id - y.id);
+
+    // Бинпоиск спринта по id
+    let findSprintById = id => {
+        let l = -1, r = allSprints.length;
+        while (r - l > 1) {
+            let m = Math.floor((r + l) / 2);
+            if (allSprints[m].id <= id)
+                l = m;
+            else
+                r = m;
+        }
+        if (l === -1 || allSprints[l].id !== id)
+            return undefined;
+        else
+            return allSprints[l];
+    }
+
+    // Бинпоиск спринта по timestamp
+    let findSprintByTime = time => {
+        let l = -1, r = allSprints.length;
+        while (r - l > 1) {
+            let m = Math.floor((r + l) / 2);
+            if (allSprints[m].startAt <= time)
+                l = m;
+            else
+                r = m;
+        }
+        if (l === -1 || allSprints[l].finishAt <= time)
+            return undefined;
+        else
+            return allSprints[l];
+    }
 
 
 
-
-
-    // *** Реализация слайда 'vote'
-
+    // ** Реализация слайда 'vote' *
 
     // Ищем текущий спринт в массиве
-    const currentSprint = allSprints.find(item => item.id === sprintId);
+    const currentSprint = findSprintById(sprintId);
 
     // Ассоциативный массив: ключ - id пользователя, значение - количество лайков.
     let voteLikesCnt = Object.create(null);
-    allUsers.forEach(user => voteLikesCnt[user.id] = 0);
+    for (let key in allUsers) {
+        voteLikesCnt[allUsers[key].id] = 0;
+    }
 
     // Перебираем комментарии
     allComments.forEach(comment => {
@@ -107,8 +143,11 @@ function prepareData(entities, { sprintId }) {
 
     // Формируем массив c id и лайками, сортируем
     let voteLikes = [];
-    for (userId in voteLikesCnt) {
-        voteLikes.push({ id: +userId, likes: voteLikesCnt[userId] });
+    for (key in voteLikesCnt) {
+        voteLikes.push({
+            id: Number(key),
+            likes: voteLikesCnt[key]
+        });
     }
     voteLikes.sort((a, b) => {
         if (a.likes > b.likes) return -1;
@@ -120,18 +159,13 @@ function prepareData(entities, { sprintId }) {
 
     // Функция добавляет суффикс ' голос{_|а|ов}'
     let getVoteSuffix = num => {
-        if (11 <= num % 100 && num % 100 <= 19) {
+        if (11 <= num % 100 && num % 100 <= 19)
             return ' голосов';
-        }
-        else if (num % 10 === 1) {
+        else if (num % 10 === 1)
             return ' голос';
-        }
-        else if (2 <= num % 10 && num % 10 <= 4) {
+        else if (2 <= num % 10 && num % 10 <= 4)
             return ' голоса';
-        }
-        else {
-            return ' голосов';
-        }
+        return ' голосов';
     }
 
     // Формируем массив пользователей
@@ -139,8 +173,7 @@ function prepareData(entities, { sprintId }) {
     voteLikes.forEach(item => {
 
         // Ищем пользователя
-        // TODO: Квадратичная ассимптотика, нужно улучшить! Например сразу передавать данные о пользователе
-        let user = allUsers.find(cur => cur.id === item.id);
+        let user = allUsers[item.id];
 
         // Добавляем строчку о пользователе в массив
         voteUsers.push({
@@ -164,10 +197,7 @@ function prepareData(entities, { sprintId }) {
 
     
 
-
-
-    // *** Реализация слайда 'leaders'
-
+    // ** Реализация слайда 'leaders' *
 
     // Ассоциативный массив: ключ - id, значение - количество коммитов
     let leadersCommitsCnt = Object.create(null);
@@ -195,7 +225,7 @@ function prepareData(entities, { sprintId }) {
     // Формируем массив, сортируем
     let leadersCommits = [];
     for (userId in leadersCommitsCnt) {
-        leadersCommits.push({ id: +userId, commits: leadersCommitsCnt[userId] });
+        leadersCommits.push({ id: Number(userId), commits: leadersCommitsCnt[userId] });
     }
     leadersCommits.sort((a, b) => {
         if (a.commits > b.commits) return -1;
@@ -210,8 +240,7 @@ function prepareData(entities, { sprintId }) {
     leadersCommits.forEach(item => {
 
         // Ищем пользователя
-        // TODO: Квадратичная ассимптотика, нужно улучшить! Например сразу передавать данные о пользователе
-        let user = allUsers.find(cur => cur.id === item.id);
+        let user = allUsers[item.id];
 
         // Добавляем строчку о пользователе в массив
         leadersUsers.push({
@@ -235,54 +264,36 @@ function prepareData(entities, { sprintId }) {
 
 
 
+    // ** Реализация слайда 'chart' *
 
-
-    // *** Реализация слайда 'chart'
-
-
-    // Вспомогательный массив, элементы вида: { id, начало, конец, коммиты }
-    let chartSprintsData = [];
+    // Ассоциативный массив: ключ - id спринта, значение - количество коммитов
+    let chartCommitsCnt = Object.create(null);
 
     // Проходимся по всем коммитами и добавляем данные в массив
     allSprints.forEach(sprint => {
-        chartSprintsData.push({
-            id: sprint.id,
-            begin: sprint.startAt,
-            end: sprint.finishAt,
-            commits: 0,
-            name: sprint.name
-        });
+        chartCommitsCnt[sprint.id] = 0;
     });
-
-    // Сортировка по id
-    chartSprintsData.sort((a, b) => a.id - b.id);
 
     // Подсчет коммитов
     allCommits.forEach(commit => {
-
-        // TODO: Квадратная ассимптотика! Нужно улучшить!
-        chartSprintsData.some((item, index, array) => {
-            if (item.begin <= commit.timestamp && commit.timestamp < item.end) {
-                array[index].commits++;
-                return true;
-            }
-            return false;
-        });
+        let sprint = findSprintByTime(commit.timestamp);
+        chartCommitsCnt[sprint.id]++;
     });
 
     // Данные для графика
     let chartValues = [];
-    chartSprintsData.forEach(sprint => {
+    for (let key in chartCommitsCnt) {
+        let sprint = findSprintById(Number(key));
         let obj = {
             title: String(sprint.id),
             hint: sprint.name,
-            value: sprint.commits,
+            value: chartCommitsCnt[key],
         }
         if (sprint.id === currentSprint.id) {
             obj.active = true;
         }
         chartValues.push(obj);
-    });
+    }
 
     // Добавляем слайд
     slides.push({
@@ -299,31 +310,23 @@ function prepareData(entities, { sprintId }) {
 
 
 
-
-
-    // *** Реализация слайда 'diagram'
-
+    // ** Реализация слайда 'diagram' *
 
     // Ищем предыдущий спринт
-    const prevSprint = allSprints.find(item => item.id === sprintId - 1);
+    const prevSprint = findSprintById(sprintId - 1);
     
     // Коммиты за текущий и предыдущий спринты: [0] > 1001 строки, [1] 501 — 1000 строк, [2] 101 — 500 строк, [3] 1 — 100 строк
     let diagramCurrectCommits = [ 0, 0, 0, 0 ], diagramPrevCommits = [ 0, 0, 0, 0 ];
 
     // Функция, которая по количеству строк кода возвращает номер категории, к которой нуджно отнести коммит
     let getCommitCategory = value => {
-        if (value <= 100) {
+        if (value <= 100)
             return 3;
-        }
-        else if (value <= 500) {
+        if (value <= 500)
             return 2;
-        }
-        else if (value <= 1000) {
+        if (value <= 1000)
             return 1;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     // Перебираем все коммиты
@@ -338,25 +341,20 @@ function prepareData(entities, { sprintId }) {
         // Считаем общее количество строк в коммите
         let commitTotalStrings = 0;
         commit.summaries.forEach(item => {
-
-            // TODO: Квадратичная ассимптотика! Плохо!
-            let summary = (typeof item === 'object' ? item : allSummaries.find(cur => cur.id === item));
+            let summary = (typeof item === 'object' ? item : allSummaries[item]);
             commitTotalStrings += summary.added + summary.removed;
         });
+        let category = getCommitCategory(commitTotalStrings);
 
         // Решаем, в какой спринт добавить коммит
-        if (prevSprint && prevSprint.startAt <= commit.timestamp && commit.timestamp < prevSprint.finishAt) {
-            diagramPrevCommits[getCommitCategory(commitTotalStrings)]++;
-        }
-        else if (currentSprint.startAt <= commit.timestamp && commit.timestamp < currentSprint.finishAt) {
-            diagramCurrectCommits[getCommitCategory(commitTotalStrings)]++;
-        }
+        if (prevSprint && prevSprint.startAt <= commit.timestamp && commit.timestamp < prevSprint.finishAt)
+            diagramPrevCommits[category]++;
+        else if (currentSprint.startAt <= commit.timestamp && commit.timestamp < currentSprint.finishAt)
+            diagramCurrectCommits[category]++;
     });
 
     // Считаем разницу
-    let diagramDifferences = diagramCurrectCommits.map((item, index) => {
-        return diagramCurrectCommits[index] - diagramPrevCommits[index];
-    });
+    let diagramDifferences = diagramCurrectCommits.map((item, index) => diagramCurrectCommits[index] - diagramPrevCommits[index]);
 
     // Считаем сумму коммитов по спринтам
     let diagramCurrentValue = diagramCurrectCommits.reduce((sum, item) => sum += item, 0);
@@ -366,18 +364,13 @@ function prepareData(entities, { sprintId }) {
     // Функция, добавляющая суффикс 'коммит{_|а|ов}'
     let getDiagramSuffix = (num) => {
         num = Math.abs(num);
-        if (11 <= num % 100 && num % 100 <= 19) {
+        if (11 <= num % 100 && num % 100 <= 19)
             return ' коммитов';
-        }
-        else if (num % 10 === 1) {
+        else if (num % 10 === 1)
             return ' коммит';
-        }
-        else if (2 <= num % 10 && num % 10 <= 4) {
+        else if (2 <= num % 10 && num % 10 <= 4)
             return ' коммита';
-        }
-        else {
-            return ' коммитов';
-        }
+        return ' коммитов';
     }
 
     // Добавляем слайд
@@ -415,9 +408,7 @@ function prepareData(entities, { sprintId }) {
 
 
 
-
-
-    // *** Реализация слайда 'activity'
+    // ** Реализация слайда 'activity' *
 
     // Название дней недели
     const dayNames = [ 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat' ];
@@ -444,7 +435,6 @@ function prepareData(entities, { sprintId }) {
         activityData[dayNames[date.getDay()]][date.getHours()]++;
     });
 
-
     // Добавляем слайд
     slides.push({
         alias: 'activity',
@@ -456,7 +446,7 @@ function prepareData(entities, { sprintId }) {
     });
 
 
-
+    // Возвращаем слайды
     return slides;
 }
 
